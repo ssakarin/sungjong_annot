@@ -703,13 +703,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.past_pos = event.globalPos()-QPoint(10,31)  #보정              
 
     def mouseReleaseEvent(self,event):  # 마우스 좌눌렀다 뗄때 좌표
-        if self.de_image_lbl.isVisible() and self.de_Polygon.isChecked() == False and self.de_list_table.rowCount()>0:
+        if self.de_image_lbl.isVisible() and self.de_list_table.rowCount()>0 and self.de_Polygon.isChecked() == False :
             self.end_pos = event.globalPos()- QPoint(10,31)  #보정
             self.present_pos = event.globalPos()- QPoint(10,31)  #보정
 
             # 마우스 클릭, 릴리즈 위치가 이미지 안인지 확인    
             if self.past_pos.x()>= self.image_pos.x() and self.past_pos.y()>= self.image_pos.y() and self.end_pos.x() <= (self.image_pos.x()+self.de_image_lbl.width()) \
-                and self.end_pos.y() <= (self.image_pos.y()+self.de_image_lbl.height()) and self.de_image_lbl.isVisible() :
+                and self.end_pos.y() <= (self.image_pos.y()+self.de_image_lbl.height()):
 
                 self.de_class_choice_table.insertRow(self.de_class_choice_table.rowCount())
                 # 마우스 클릭, 릴리즈 상대위치 받아오기
@@ -721,7 +721,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if self.de_rec.isChecked():
                     self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 0, QTableWidgetItem(str(0))) #rect 0 
                 elif self.de_circle.isChecked():
-                    self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 0, QTableWidgetItem(str(1))) #circle 1
+                    self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 0, QTableWidgetItem(str(1))) #circle 
+                elif self.de_Ellipse.isChecked():
+                    self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 0, QTableWidgetItem(str(3))) #circle 
                 self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 1, QTableWidgetItem(f"{self.de_class_choice.value()}"))                     
                 self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 2, QTableWidgetItem(str(round(start_pos_x,2))))
                 self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 3, QTableWidgetItem(str(round(start_pos_y,2))))
@@ -734,8 +736,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def mouseMoveEvent(self, event):
         if self.drawing and self.past_pos is not None and self.de_Polygon.isChecked() == False:
             self.end_pos = event.globalPos() - QPoint(10,31)  #
-            mouse_pt = "Mouse Point : x={0},y={1}".format(self.end_pos.x(), self.end_pos.y())
-            self.status_bar.showMessage(mouse_pt)
+            # mouse_pt = "Mouse Point : x={0},y={1}".format(self.end_pos.x(), self.end_pos.y())
+            # self.status_bar.showMessage(mouse_pt)
             start_pos_x = (self.past_pos.x()-self.image_pos.x())/self.de_image_lbl.width()
             start_pos_y = (self.past_pos.y()-self.image_pos.y())/self.de_image_lbl.height()
             end_pos_x = (self.end_pos.x()-self.image_pos.x())/self.de_image_lbl.width()
@@ -784,21 +786,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 py1 = int(start_y * height)
                 px2 = int(end_x * width)
                 py2 = int(end_y * height)      
-                cv2.rectangle(image, (px1,py1),(px2,py2),(0, 0, 255), 2)   
+                cv2.rectangle(image, (px1,py1),(px2,py2),(120, 120, 120), 1)   
             elif self.de_circle.isChecked() :       
                 height, width = image.shape[:2]  
                 px1 = int(start_x * width)
                 py1 = int(start_y * height)
                 px2 = int(end_x * width)
                 py2 = int(end_y * height)      
-                cv2.circle(image, (int((px1+px2)/2),int((py1+py2)/2)), int((np.sqrt((px1-px2)*(px1-px2)+(py1-py2)*(py1-py2)))/2),(0, 0, 255),2)    
-            # else:
-            #     height, width = image.shape[:2]  
-            #     px1 = int(start_x * width)
-            #     py1 = int(start_y * height)
-            #     px2 = int(end_x * width)
-            #     py2 = int(end_y * height)      
-            #     cv2.line(image, (px1,py1),(px2,py2),(0, 0, 255), 2)   
+                cv2.circle(image, (int((px1+px2)/2),int((py1+py2)/2)), int((np.sqrt((px1-px2)*(px1-px2)+(py1-py2)*(py1-py2)))/2),(120, 120, 120),1)    
+            else:
+                height, width = image.shape[:2]  
+                px1 = int(start_x * width)
+                py1 = int(start_y * height)
+                px2 = int(end_x * width)
+                py2 = int(end_y * height)      
+                cv2.ellipse(image, (px1,py1),(abs(px2-px1),abs(py2-py1)),0,0,360,(120, 120, 120), 1)   
 
     def draw_Poly(self, image):
         height, width = image.shape[:2]  
@@ -918,7 +920,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if idx != row :
                     cv2.circle(image, (int((px1+px2)/2),int((py1+py2)/2)), int((np.sqrt((px1-px2)*(px1-px2)+(py1-py2)*(py1-py2)))/2), self.line_color_list[int(color)],2)
                 else :
-                    cv2.circle(image, (int((px1+px2)/2),int((py1+py2)/2)), int((np.sqrt((px1-px2)*(px1-px2)+(py1-py2)*(py1-py2)))/2), (255,120,120),5)
+                    cv2.circle(image, (int((px1+px2)/2),int((py1+py2)/2)), int((np.sqrt((px1-px2)*(px1-px2)+(py1-py2)*(py1-py2)))/2), (255,120,120),10)
+            elif int(type) == 3:
+                px1 = int(float(x1) * width)
+                py1 = int(float(y1) * height)
+                px2 = int(float(x2) * width)
+                py2 = int(float(y2) * height)
+                if idx != row :
+                    cv2.ellipse(image, (px1,py1),(abs(px2-px1),abs(py2-py1)),0,0,360,self.line_color_list[int(color)], 2)   
+                else :              
+                    cv2.ellipse(image, (px1,py1),(abs(px2-px1),abs(py2-py1)),0,0,360,(255,120,120),10)    
             else: #polygon
                 point = y1.split(',')
                 for i in range (int(x1)-1):
@@ -929,7 +940,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     if idx != row :
                         cv2.line(image, (px1,py1),(px2,py2),self.line_color_list[int(color)], 2) 
                     else :
-                        cv2.line(image, (px1,py1),(px2,py2), (255,120,120),5) 
+                        cv2.line(image, (px1,py1),(px2,py2), (255,120,120),10) 
                 px1 = int(float(point[0]) * width)
                 py1 = int(float(point[1]) * height)
                 px2 = int(float(point[2*(int(x1)-1)]) * width)
@@ -937,7 +948,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if idx != row :
                     cv2.line(image, (px1,py1),(px2,py2),self.line_color_list[int(color)], 2) 
                 else:
-                    cv2.line(image, (px1,py1),(px2,py2), (255,120,120),5)
+                    cv2.line(image, (px1,py1),(px2,py2), (255,120,120),10)
 
         return image  # 수정된 이미지 반환
     

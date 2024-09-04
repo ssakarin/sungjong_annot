@@ -481,8 +481,13 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addWidget(self.de_circle)
 
+        self.de_Ellipse = QRadioButton(self.groupBox)
+        self.de_Ellipse.setObjectName(u"de_Ellipse")
+
+        self.verticalLayout.addWidget(self.de_Ellipse)
+
         self.de_Polygon = QRadioButton(self.groupBox)
-        self.de_Polygon.setObjectName(u"Polygon")
+        self.de_Polygon.setObjectName(u"de_Polygon")
 
         self.verticalLayout.addWidget(self.de_Polygon)
 
@@ -659,6 +664,7 @@ class Ui_MainWindow(object):
         self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Labelling Shape", None))
         self.de_rec.setText(QCoreApplication.translate("MainWindow", u"Rectangle", None))
         self.de_circle.setText(QCoreApplication.translate("MainWindow", u"Circle", None))
+        self.de_Ellipse.setText(QCoreApplication.translate("MainWindow", u"Ellipse", None))
         self.de_Polygon.setText(QCoreApplication.translate("MainWindow", u"Polygon", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Choose Class", None))
         self.delete_row.setText(QCoreApplication.translate("MainWindow", u"Delete", None))

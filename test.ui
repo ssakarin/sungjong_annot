@@ -590,6 +590,13 @@
                 </widget>
                </item>
                <item>
+                <widget class="QRadioButton" name="de_Ellipse">
+                 <property name="text">
+                  <string>Ellipse</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QRadioButton" name="de_Polygon">
                  <property name="text">
                   <string>Polygon</string>
