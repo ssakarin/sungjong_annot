@@ -692,8 +692,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if self.past_pos.x()>= image_pos.x() and self.past_pos.y()>= image_pos.y() :
                 self.drawing = True
                 if self.de_Polygon.isChecked():  
-                    self.de_image_lbl.setMouseTracking(True)  
                     self.setMouseTracking(True) 
+                    self.first_tab.setMouseTracking(True)
+                    self.detection_tab.setMouseTracking(True)
+                    self.de_image_lbl.setMouseTracking(True)  
                     self.poly_pos.append(event.globalPos()-QPoint(10,31))
                     self.temp_image = self.current_image.copy()  # 원본 이미지를 복사하z여 임시 이미지로 사용
                     self.draw_Poly(self.temp_image)
@@ -720,8 +722,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 0, QTableWidgetItem(str(0))) #rect 0 
                 elif self.de_circle.isChecked():
                     self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 0, QTableWidgetItem(str(1))) #circle 1
-                else:
-                    self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 0, QTableWidgetItem(str(2))) #polygon 2
                 self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 1, QTableWidgetItem(f"{self.de_class_choice.value()}"))                     
                 self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 2, QTableWidgetItem(str(round(start_pos_x,2))))
                 self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 3, QTableWidgetItem(str(round(start_pos_y,2))))
@@ -732,7 +732,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.de_show_image() # 새로 클릭한 좌표 그려주기
 
     def mouseMoveEvent(self, event):
-        if self.drawing and self.past_pos is not None:
+        if self.drawing and self.past_pos is not None and self.de_Polygon.isChecked() == False:
             self.end_pos = event.globalPos() - QPoint(10,31)  #
             mouse_pt = "Mouse Point : x={0},y={1}".format(self.end_pos.x(), self.end_pos.y())
             self.status_bar.showMessage(mouse_pt)
@@ -743,6 +743,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.temp_image = self.current_image.copy()  # 원본 이미지를 복사하여 임시 이미지로 사용
             self.draw_shape(self.temp_image,start_pos_x,start_pos_y,end_pos_x,end_pos_y)
             self.update_image_display(self.temp_image)    
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Delete and self.drawing and self.de_Polygon.isChecked() :
+            if(self.poly_pos):
+                self.poly_pos.pop()
+            self.temp_image = self.current_image.copy() 
+            self.draw_Poly(self.temp_image)
+            self.update_image_display(self.temp_image)  
+        if event.key() == Qt.Key_Return and self.drawing and self.de_Polygon.isChecked() :
+            self.de_class_choice_table.insertRow(self.de_class_choice_table.rowCount())
+            self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 0, QTableWidgetItem(str(2))) #polygon 2
+            self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 1, QTableWidgetItem(f"{self.de_class_choice.value()}"))   
+            self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 2, QTableWidgetItem(str(len(self.poly_pos)))) # 몇각형 인지 저장
+            pos_str = ''
+            for pos in self.poly_pos :
+                pos_str += str(round((pos.x()-self.image_pos.x())/self.de_image_lbl.width(),2))
+                pos_str +=',' 
+                pos_str += str(round((pos.y()-self.image_pos.y())/self.de_image_lbl.height(),2))
+                pos_str +=','
+            self.de_class_choice_table.setItem(self.de_class_choice_table.rowCount()-1, 3, QTableWidgetItem(pos_str))
+            self.de_class_file_save()
+            self.de_show_image() # 새로 클릭한 좌표 그려주기
+            self.poly_pos.clear()
+
 
     def update_image_display(self, image):
         if image is not None:
@@ -768,13 +792,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 px2 = int(end_x * width)
                 py2 = int(end_y * height)      
                 cv2.circle(image, (int((px1+px2)/2),int((py1+py2)/2)), int((np.sqrt((px1-px2)*(px1-px2)+(py1-py2)*(py1-py2)))/2),(0, 0, 255),2)    
-            else:
-                height, width = image.shape[:2]  
-                px1 = int(start_x * width)
-                py1 = int(start_y * height)
-                px2 = int(end_x * width)
-                py2 = int(end_y * height)      
-                cv2.line(image, (px1,py1),(px2,py2),(0, 0, 255), 2)   
+            # else:
+            #     height, width = image.shape[:2]  
+            #     px1 = int(start_x * width)
+            #     py1 = int(start_y * height)
+            #     px2 = int(end_x * width)
+            #     py2 = int(end_y * height)      
+            #     cv2.line(image, (px1,py1),(px2,py2),(0, 0, 255), 2)   
 
     def draw_Poly(self, image):
         height, width = image.shape[:2]  
@@ -784,11 +808,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 py1 = int((self.poly_pos[i].y()-self.image_pos.y())/self.de_image_lbl.height()*height)
                 px2 = int((self.poly_pos[i+1].x()-self.image_pos.x())/self.de_image_lbl.width()*width)
                 py2 = int((self.poly_pos[i+1].y()-self.image_pos.y())/self.de_image_lbl.height()*height)     
-                cv2.line(image, (px1,py1),(px2,py2),(0, 0, 255), 2)  
+                cv2.line(image, (px1,py1),(px2,py2),(255, 120, 120), 2)  
                 if i == len(self.poly_pos)-2 :
                     px1 = int((self.poly_pos[0].x()-self.image_pos.x())/self.de_image_lbl.width()*width)
                     py1 = int((self.poly_pos[0].y()-self.image_pos.y())/self.de_image_lbl.height()*height)
-                    cv2.line(image, (px1,py1),(px2,py2),(0, 255, 0), 2)  
+                    cv2.line(image, (px1,py1),(px2,py2),(0, 255, 0), 1)  
 
     def de_class_file_save(self) :
         row = self.de_list_table.currentRow()
@@ -799,7 +823,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 line = ''
                 for col_index in range(self.de_class_choice_table.columnCount()):
                     item = self.de_class_choice_table.item(row_index, col_index)
-                    line += item.text() 
+                    if item: 
+                       line += item.text() 
                     if col_index < self.de_class_choice_table.columnCount()-1:
                         line += ' '
                     else :
@@ -854,7 +879,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             for col in range(cols):
                 item = self.de_class_choice_table.item(row, col)
                 if item is not None:
-                    row_data.append(float(item.text()))
+                    row_data.append(item.text())
                 else:
                     row_data.append(0.0)  # 빈 셀의 경우 빈 문자열로 처리
             table_data.append(row_data)
@@ -873,26 +898,47 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         row = self.de_class_choice_table.currentRow()
         height, width = image.shape[:2]            
         for idx, coord in enumerate(coord_list):
-            if len(coord) == 6 :
-                type, color, x1, y1, x2, y2 = coord
+            type, color, x1, y1, x2, y2 = coord
+            if int(type) == 0  : # rec
                 # 좌표를 픽셀 값으로 변환
-                px1 = int(x1 * width)
-                py1 = int(y1 * height)
-                px2 = int(x2 * width)
-                py2 = int(y2 * height)                
-                # 이미지에 사각형 그리기
-                if int(type) == 0  : # rec
+                px1 = int(float(x1) * width)
+                py1 = int(float(y1) * height)
+                px2 = int(float(x2) * width)
+                py2 = int(float(y2) * height)          
+                if idx != row :
+                    cv2.rectangle(image, (px1, py1), (px2, py2), self.line_color_list[int(color)], 2)
+                else :
+                    cv2.rectangle(image, (px1, py1), (px2, py2), (255,120,120), 5)
+            elif int(type) == 1 : # circle
+                # 좌표를 픽셀 값으로 변환
+                px1 = int(float(x1) * width)
+                py1 = int(float(y1) * height)
+                px2 = int(float(x2) * width)
+                py2 = int(float(y2) * height)    
+                if idx != row :
+                    cv2.circle(image, (int((px1+px2)/2),int((py1+py2)/2)), int((np.sqrt((px1-px2)*(px1-px2)+(py1-py2)*(py1-py2)))/2), self.line_color_list[int(color)],2)
+                else :
+                    cv2.circle(image, (int((px1+px2)/2),int((py1+py2)/2)), int((np.sqrt((px1-px2)*(px1-px2)+(py1-py2)*(py1-py2)))/2), (255,120,120),5)
+            else: #polygon
+                point = y1.split(',')
+                for i in range (int(x1)-1):
+                    px1 = int(float(point[2*i]) * width)
+                    py1 = int(float(point[2*i+1]) * height)
+                    px2 = int(float(point[2*i+2]) * width)
+                    py2 = int(float(point[2*i+3]) * height)
                     if idx != row :
-                        cv2.rectangle(image, (px1, py1), (px2, py2), self.line_color_list[int(color)], 2)
+                        cv2.line(image, (px1,py1),(px2,py2),self.line_color_list[int(color)], 2) 
                     else :
-                        cv2.rectangle(image, (px1, py1), (px2, py2), (255,120,120), 2)
-                elif int(type) == 1 : # circle
-                    if idx != row :
-                        cv2.circle(image, (int((px1+px2)/2),int((py1+py2)/2)), int((np.sqrt((px1-px2)*(px1-px2)+(py1-py2)*(py1-py2)))/2), self.line_color_list[int(color)],2)
-                    else :
-                        cv2.circle(image, (int((px1+px2)/2),int((py1+py2)/2)), int((np.sqrt((px1-px2)*(px1-px2)+(py1-py2)*(py1-py2)))/2), (255,120,120),2)
-                else:  #polygon
-                    pass
+                        cv2.line(image, (px1,py1),(px2,py2), (255,120,120),5) 
+                px1 = int(float(point[0]) * width)
+                py1 = int(float(point[1]) * height)
+                px2 = int(float(point[2*(int(x1)-1)]) * width)
+                py2 = int(float(point[2*(int(x1)-1)+1]) * height)
+                if idx != row :
+                    cv2.line(image, (px1,py1),(px2,py2),self.line_color_list[int(color)], 2) 
+                else:
+                    cv2.line(image, (px1,py1),(px2,py2), (255,120,120),5)
+
         return image  # 수정된 이미지 반환
     
     def de_delete_row(self):
